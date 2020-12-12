@@ -33,6 +33,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
+import io.github.astrarre.mappingpoet.manifest.ManifestRemapper;
+
 //Taken from loom
 public class MappingsStore {
 	private final Map<String, ClassDef> classes = new HashMap<>();
@@ -41,19 +43,21 @@ public class MappingsStore {
 
 	private final String namespace = "named";
 
-	public MappingsStore(Path tinyFile) {
+	public MappingsStore(Path tinyFile, Path manifest) {
 		final TinyTree mappings = readMappings(tinyFile);
+		ManifestRemapper remapper = new ManifestRemapper(manifest);
 
 		for (ClassDef classDef : mappings.getClasses()) {
-			final String className = classDef.getName(namespace);
+			final String className = remapper.map(classDef.getName(namespace));
+
 			classes.put(className, classDef);
 
 			for (FieldDef fieldDef : classDef.getFields()) {
-				fields.put(new EntryTriple(className, fieldDef.getName(namespace), fieldDef.getDescriptor(namespace)), fieldDef);
+				fields.put(new EntryTriple(className, fieldDef.getName(namespace), remapper.mapDesc(fieldDef.getDescriptor(namespace))), fieldDef);
 			}
 
 			for (MethodDef methodDef : classDef.getMethods()) {
-				methods.put(new EntryTriple(className, methodDef.getName(namespace), methodDef.getDescriptor(namespace)), methodDef);
+				methods.put(new EntryTriple(className, methodDef.getName(namespace), remapper.mapMethodDesc(methodDef.getDescriptor(namespace))), methodDef);
 			}
 		}
 	}
@@ -111,7 +115,7 @@ public class MappingsStore {
 				return ret;
 			}
 		}
-		
+
 		methods.put(methodEntry, null);
 		return null;
 	}

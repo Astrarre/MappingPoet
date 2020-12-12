@@ -1,7 +1,19 @@
+buildscript {
+    repositories {
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
+    }
+    dependencies {
+        classpath "gradle.plugin.net.minecrell:licenser:0.2.1"
+    }
+}
+
 plugins {
     id 'java'
     id 'maven-publish'
 }
+apply plugin: net.minecrell.gradle.licenser.Licenser
 
 group 'net.fabricmc'
 version '0.1.0'
@@ -46,8 +58,10 @@ jar {
     }
 }
 
-apply from: 'https://github.com/FabricMC/fabric-docs/raw/master/gradle/license.gradle'
-
+license {
+    header file('HEADER')
+    include '**/*.java'
+}
 publishing {
     publications {
         mavenJava(MavenPublication) {

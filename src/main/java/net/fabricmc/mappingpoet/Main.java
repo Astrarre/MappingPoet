@@ -41,22 +41,24 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
 
 public class Main {
-
 	public static void main(String[] args) {
-		if (args.length != 3) {
-			System.out.println("<mappings> <inputJar> <outputDir>");
+		if (args.length != 4) {
+			System.out.println("<mappings> <inputJar> <outputDir> <manifest.properties>");
 			return;
 		}
 		Path mappings = Paths.get(args[0]);
 		Path inputJar = Paths.get(args[1]);
 		Path outputDirectory = Paths.get(args[2]);
+		Path manifest = Paths.get(args[3]);
 
 		try {
 			if (Files.exists(outputDirectory)) {
-				Files.walk(outputDirectory)
+				if(Files.walk(outputDirectory)
 						.sorted(Comparator.reverseOrder())
 						.map(Path::toFile)
-						.forEach(File::delete);
+						.allMatch(File::delete)) {
+					System.out.println("output dir cleared!");
+				}
 			}
 
 			Files.createDirectories(outputDirectory);
@@ -74,11 +76,16 @@ public class Main {
 			return;
 		}
 
-		generate(mappings, inputJar, outputDirectory);
+		if(!Files.exists(manifest)) {
+			System.out.println("could not find manifest.properties!");
+			return;
+		}
+
+		generate(mappings, inputJar, outputDirectory, manifest);
 	}
 
-	public static void generate(Path mappings, Path inputJar, Path outputDirectory) {
-		final MappingsStore mapping = new MappingsStore(mappings);
+	public static void generate(Path mappings, Path inputJar, Path outputDirectory, Path manifest) {
+		final MappingsStore mapping = new MappingsStore(mappings, manifest);
 		Map<String, ClassBuilder> classes = new HashMap<>();
 		forEachClass(inputJar, (superGetter, classNode) -> writeClass(mapping, classNode, classes, superGetter));
 
