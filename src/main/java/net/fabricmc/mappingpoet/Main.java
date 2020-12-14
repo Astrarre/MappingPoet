@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 FabricMC
+ * Copyright (c) 2020 FabricMC, Astrarre
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -53,10 +53,10 @@ public class Main {
 
 		try {
 			if (Files.exists(outputDirectory)) {
-				if(Files.walk(outputDirectory)
-						.sorted(Comparator.reverseOrder())
-						.map(Path::toFile)
-						.allMatch(File::delete)) {
+				if (Files.walk(outputDirectory)
+				         .sorted(Comparator.reverseOrder())
+				         .map(Path::toFile)
+				         .allMatch(File::delete)) {
 					System.out.println("output dir cleared!");
 				}
 			}
@@ -76,7 +76,7 @@ public class Main {
 			return;
 		}
 
-		if(!Files.exists(manifest)) {
+		if (!Files.exists(manifest)) {
 			System.out.println("could not find manifest.properties!");
 			return;
 		}
@@ -89,22 +89,28 @@ public class Main {
 		Map<String, ClassBuilder> classes = new HashMap<>();
 		forEachClass(inputJar, (superGetter, classNode) -> writeClass(mapping, classNode, classes, superGetter));
 
-		classes.values().stream()
-				.filter(classBuilder -> !classBuilder.getClassName().contains("$"))
-				.forEach(classBuilder -> {
-					JavaFile javaFile = JavaFile.builder(classBuilder.getClassName().replaceAll("/", ".").substring(0, classBuilder.getClassName().lastIndexOf("/")), classBuilder.build())
-							.build();
-					try {
-						javaFile.writeTo(outputDirectory);
-					} catch (IOException e) {
-						throw new RuntimeException("Failed to write class", e);
-					}
-				});
+		classes.values()
+		       .stream()
+		       .filter(classBuilder -> !classBuilder.getClassName().contains("$"))
+		       .forEach(classBuilder -> {
+			       JavaFile javaFile = JavaFile.builder(classBuilder.getClassName()
+			                                                        .replaceAll("/", ".")
+			                                                        .substring(0,
+					                                                        classBuilder.getClassName()
+					                                                                    .lastIndexOf("/")),
+					       classBuilder.build()).build();
+			       try {
+				       javaFile.writeTo(outputDirectory);
+			       } catch (IOException e) {
+				       throw new RuntimeException("Failed to write class", e);
+			       }
+		       });
 
 
 	}
 
-	private static void forEachClass(Path jar, BiConsumer<Function<String, Collection<String>>, ClassNode> classNodeConsumer) {
+	private static void forEachClass(Path jar,
+			BiConsumer<Function<String, Collection<String>>, ClassNode> classNodeConsumer) {
 		List<ClassNode> classes = new ArrayList<>();
 		Map<String, Collection<String>> supers = new HashMap<>();
 		try (final JarFile jarFile = new JarFile(jar.toFile())) {
@@ -146,11 +152,10 @@ public class Main {
 		classes.forEach(node -> classNodeConsumer.accept(superGetter, node));
 	}
 
-	private static boolean isDigit(char ch) {
-		return ch >= '0' && ch <= '9';
-	}
-
-	private static void writeClass(MappingsStore mappings, ClassNode classNode, Map<String, ClassBuilder> existingClasses, Function<String, Collection<String>> superGetter) {
+	private static void writeClass(MappingsStore mappings,
+			ClassNode classNode,
+			Map<String, ClassBuilder> existingClasses,
+			Function<String, Collection<String>> superGetter) {
 		String name = classNode.name;
 		{
 			//Block anonymous class and their nested classes
@@ -179,10 +184,32 @@ public class Main {
 
 	}
 
-	private static TypeSpec.Builder createTypeSpecBuilder(ClassNode classNode) {
-		return TypeSpec.classBuilder(classNode.name)
-				.addModifiers();
+	private static boolean isDigit(char ch) {
+		return ch >= '0' && ch <= '9';
 	}
 
+	public static void generate(MappingsStore mapping, Path inputJar, Path outputDir) {
+		Map<String, ClassBuilder> classes = new HashMap<>();
+		forEachClass(inputJar, (superGetter, classNode) -> writeClass(mapping, classNode, classes, superGetter));
+		classes.values()
+		       .stream()
+		       .filter(classBuilder -> !classBuilder.getClassName().contains("$"))
+		       .forEach(classBuilder -> {
+			       JavaFile javaFile = JavaFile.builder(classBuilder.getClassName()
+			                                                        .replaceAll("/", ".")
+			                                                        .substring(0,
+					                                                        classBuilder.getClassName()
+					                                                                    .lastIndexOf("/")),
+					       classBuilder.build()).build();
+			       try {
+				       javaFile.writeTo(outputDir);
+			       } catch (IOException e) {
+				       throw new RuntimeException("Failed to write class", e);
+			       }
+		       });
+	}
 
+	private static TypeSpec.Builder createTypeSpecBuilder(ClassNode classNode) {
+		return TypeSpec.classBuilder(classNode.name).addModifiers();
+	}
 }

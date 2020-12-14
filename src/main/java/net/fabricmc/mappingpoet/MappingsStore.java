@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 FabricMC
+ * Copyright (c) 2020 FabricMC, Astrarre
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,13 +33,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;
 
-import io.github.astrarre.mappingpoet.manifest.ManifestRemapper;
+import io.github.astrarre.mappingpoet.ManifestRemapper;
 
 //Taken from loom
 public class MappingsStore {
-	private final Map<String, ClassDef> classes = new HashMap<>();
-	private final Map<EntryTriple, FieldDef> fields = new HashMap<>();
-	private final Map<EntryTriple, MethodDef> methods = new HashMap<>();
+	public final Map<String, ClassDef> classes = new HashMap<>();
+	public final Map<EntryTriple, FieldDef> fields = new HashMap<>();
+	public final Map<EntryTriple, MethodDef> methods = new HashMap<>();
 
 	private final String namespace = "named";
 

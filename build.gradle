@@ -12,16 +12,15 @@ buildscript {
 plugins {
     id 'java'
     id 'maven-publish'
+    id "com.jfrog.bintray" version "1.8.4"
 }
+
 apply plugin: net.minecrell.gradle.licenser.Licenser
 
-group 'net.fabricmc'
-version '0.1.0'
+group 'io.github.astrarre'
+version '0.0.2'
 
 sourceCompatibility = 1.8
-
-def ENV = System.getenv()
-version = version + "+" + (ENV.BUILD_NUMBER ? ("build." + ENV.BUILD_NUMBER) : "local")
 
 repositories {
     mavenCentral()
@@ -35,12 +34,11 @@ dependencies {
     compile 'com.squareup:javapoet:1.12.1'
     compile 'net.fabricmc:tiny-mappings-parser:0.2.2.14'
     runtimeOnly 'com.google.guava:guava:28.2-jre'
-
     compile 'org.ow2.asm:asm:8.0'
-    compile 'org.ow2.asm:asm-analysis:8.0'
+    //compile 'org.ow2.asm:asm-analysis:8.0'
     compile 'org.ow2.asm:asm-commons:8.0'
     compile 'org.ow2.asm:asm-tree:8.0'
-    compile 'org.ow2.asm:asm-util:8.0'
+    //compile 'org.ow2.asm:asm-util:8.0'
 
     testImplementation 'org.junit.jupiter:junit-jupiter-api:5.1.0'
     testRuntimeOnly 'org.junit.jupiter:junit-jupiter-engine:5.1.0'
@@ -62,23 +60,32 @@ license {
     header file('HEADER')
     include '**/*.java'
 }
+
 publishing {
     publications {
         mavenJava(MavenPublication) {
+            groupId group
+            artifactId "mappingpoet"
+            version version
             from components.java
         }
     }
+}
 
-    // select the repositories you want to publish to
-    repositories {
-        if (project.hasProperty('mavenPass')) {
-            maven {
-                url = "http://mavenupload.modmuss50.me/"
-                credentials {
-                    username = "buildslave"
-                    password = project.getProperty('mavenPass')
-                }
-            }
+bintray {
+    user = project.hasProperty('bintray_user') ? project.property('bintray_user') : ""
+    key = project.hasProperty('bintray_api_key') ? project.property('bintray_api_key') : ""
+    publications = ["mavenJava"]
+    publish = true
+    //[Default: false] Whether version should be auto published after an upload
+    pkg {
+        repo = "maven"
+        name = "mappingpoet"
+        userOrg = "astrarre"
+        licenses = ["Apache-2.0"]
+        version {
+            name = version
+            released = new Date()
         }
     }
 }
