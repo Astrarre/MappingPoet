@@ -82,7 +82,7 @@ public class Main {
 	}
 
 	public static void generate(Path mappings, Path inputJar, Path outputDirectory, Path manifest) {
-		final MappingsStore mapping = new MappingsStore(mappings, manifest);
+		final RemappingMappingsStore mapping = new RemappingMappingsStore(mappings, manifest);
 		Map<String, ClassBuilder> classes = new HashMap<>();
 		forEachClass(inputJar, (superGetter, classNode) -> writeClass(mapping, classNode, classes, superGetter));
 
