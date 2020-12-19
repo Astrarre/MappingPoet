@@ -16,6 +16,7 @@
 
 package net.fabricmc.mappingpoet;
 
+import java.lang.reflect.Modifier;
 import java.util.AbstractMap;
 import java.util.Iterator;
 import java.util.List;
@@ -247,7 +248,8 @@ public class FieldBuilder {
 		FieldSpec.Builder ret = FieldSpec.builder(calculateType(), fieldNode.name)
 				.addModifiers(new ModifierBuilder(fieldNode.access).getModifiers(ModifierBuilder.Type.FIELD));
 
-		if ((fieldNode.access & Opcodes.ACC_FINAL) != 0) {
+		int access = fieldNode.access;
+		if (Modifier.isStatic(access) && Modifier.isPublic(access)) {
 			ret.initializer(makeInitializer(fieldNode.desc)); // so jd doesn't complain about type mismatch
 		}
 
@@ -266,22 +268,22 @@ public class FieldBuilder {
 			if (fieldNode.value != null) {
 				return CodeBlock.builder().add(String.valueOf(fieldNode.value)).build();
 			}
-			return CodeBlock.builder().add("java.lang.Byte.parseByte(\"dummy\")").build();
+			return CodeBlock.builder().add("Byte.parseByte(\"impl hidden\")").build();
 		case 'F':
 			if (fieldNode.value != null) {
 				return CodeBlock.builder().add(fieldNode.value + "f").build();
 			}
-			return CodeBlock.builder().add("java.lang.Float.parseFloat(\"dummy\")").build();
+			return CodeBlock.builder().add("Float.parseFloat(\"impl hidden\")").build();
 		case 'Z':
 			if (fieldNode.value instanceof Number) {
 				return CodeBlock.builder().add(Boolean.toString(((Number) fieldNode.value).intValue() != 0)).build();
 			}
-			return CodeBlock.builder().add("java.lang.Boolean.parseBoolean(\"dummy\")").build();
+			return CodeBlock.builder().add("Boolean.parseBoolean(\"impl hidden\")").build();
 		}
 		if (fieldNode.value != null) {
 			return CodeBlock.builder().add("$S", fieldNode.value).build();
 		}
-		return CodeBlock.builder().add(desc.equals("Ljava/lang/String;") ? "java.lang.String.valueOf(\"dummy\")" : "null").build();
+		return CodeBlock.builder().add(desc.equals("Ljava/lang/String;") ? "\"impl hidden\"" : "null").build();
 	}
 
 	private void addJavaDoc() {
