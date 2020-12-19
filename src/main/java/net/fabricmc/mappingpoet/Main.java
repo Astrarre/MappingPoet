@@ -53,10 +53,7 @@ public class Main {
 
 		try {
 			if (Files.exists(outputDirectory)) {
-				if (Files.walk(outputDirectory)
-				         .sorted(Comparator.reverseOrder())
-				         .map(Path::toFile)
-				         .allMatch(File::delete)) {
+				if (Files.walk(outputDirectory).sorted(Comparator.reverseOrder()).map(Path::toFile).allMatch(File::delete)) {
 					System.out.println("output dir cleared!");
 				}
 			}
@@ -89,28 +86,22 @@ public class Main {
 		Map<String, ClassBuilder> classes = new HashMap<>();
 		forEachClass(inputJar, (superGetter, classNode) -> writeClass(mapping, classNode, classes, superGetter));
 
-		classes.values()
-		       .stream()
-		       .filter(classBuilder -> !classBuilder.getClassName().contains("$"))
-		       .forEach(classBuilder -> {
-			       JavaFile javaFile = JavaFile.builder(classBuilder.getClassName()
-			                                                        .replaceAll("/", ".")
-			                                                        .substring(0,
-					                                                        classBuilder.getClassName()
-					                                                                    .lastIndexOf("/")),
-					       classBuilder.build()).build();
-			       try {
-				       javaFile.writeTo(outputDirectory);
-			       } catch (IOException e) {
-				       throw new RuntimeException("Failed to write class", e);
-			       }
-		       });
-
-
+		for (ClassBuilder classBuilder : classes.values()) {
+			if (!classBuilder.getClassName().contains("$")) {
+				JavaFile javaFile = JavaFile.builder(classBuilder.getClassName()
+				                                                 .replaceAll("/", ".")
+				                                                 .substring(0, classBuilder.getClassName().lastIndexOf("/")), classBuilder.build())
+				                            .build();
+				try {
+					javaFile.writeTo(outputDirectory);
+				} catch (IOException e) {
+					throw new RuntimeException("Failed to write class", e);
+				}
+			}
+		}
 	}
 
-	private static void forEachClass(Path jar,
-			BiConsumer<Function<String, Collection<String>>, ClassNode> classNodeConsumer) {
+	private static void forEachClass(Path jar, BiConsumer<Function<String, Collection<String>>, ClassNode> classNodeConsumer) {
 		List<ClassNode> classes = new ArrayList<>();
 		Map<String, Collection<String>> supers = new HashMap<>();
 		try (final JarFile jarFile = new JarFile(jar.toFile())) {
@@ -191,22 +182,17 @@ public class Main {
 	public static void generate(MappingsStore mapping, Path inputJar, Path outputDir) {
 		Map<String, ClassBuilder> classes = new HashMap<>();
 		forEachClass(inputJar, (superGetter, classNode) -> writeClass(mapping, classNode, classes, superGetter));
-		classes.values()
-		       .stream()
-		       .filter(classBuilder -> !classBuilder.getClassName().contains("$"))
-		       .forEach(classBuilder -> {
-			       JavaFile javaFile = JavaFile.builder(classBuilder.getClassName()
-			                                                        .replaceAll("/", ".")
-			                                                        .substring(0,
-					                                                        classBuilder.getClassName()
-					                                                                    .lastIndexOf("/")),
-					       classBuilder.build()).build();
-			       try {
-				       javaFile.writeTo(outputDir);
-			       } catch (IOException e) {
-				       throw new RuntimeException("Failed to write class", e);
-			       }
-		       });
+		classes.values().stream().filter(classBuilder -> !classBuilder.getClassName().contains("$")).forEach(classBuilder -> {
+			JavaFile javaFile = JavaFile.builder(classBuilder.getClassName()
+			                                                 .replaceAll("/", ".")
+			                                                 .substring(0, classBuilder.getClassName().lastIndexOf("/")), classBuilder.build())
+			                            .build();
+			try {
+				javaFile.writeTo(outputDir);
+			} catch (IOException e) {
+				throw new RuntimeException("Failed to write class", e);
+			}
+		});
 	}
 
 	private static TypeSpec.Builder createTypeSpecBuilder(ClassNode classNode) {

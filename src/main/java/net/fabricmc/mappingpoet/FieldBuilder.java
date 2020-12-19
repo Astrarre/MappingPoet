@@ -249,7 +249,7 @@ public class FieldBuilder {
 				.addModifiers(new ModifierBuilder(fieldNode.access).getModifiers(ModifierBuilder.Type.FIELD));
 
 		int access = fieldNode.access;
-		if (Modifier.isStatic(access) && Modifier.isPublic(access)) {
+		if (Modifier.isFinal(access)) {
 			ret.initializer(makeInitializer(fieldNode.desc)); // so jd doesn't complain about type mismatch
 		}
 
