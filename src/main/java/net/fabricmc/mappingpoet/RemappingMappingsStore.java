@@ -39,40 +39,53 @@ import org.objectweb.asm.commons.Remapper;
 //Taken from loom
 //Modified by HalfOf2
 public class RemappingMappingsStore implements MappingsStore {
+	// todo reverse this
 	public final Map<String, ClassDef> classes = new HashMap<>();
 	public final Map<EntryTriple, FieldDef> fields = new HashMap<>();
 	public final Map<EntryTriple, MethodDef> methods = new HashMap<>();
+	private final Remapper remapper;
 	private final String namespace = "named";
 
+	/**
+	 * (map from abstracter output -> minecraft)
+	 * @param remapper source -> mapping
+	 */
 	public RemappingMappingsStore(Path tinyFile, Remapper remapper) {
+		this.remapper = remapper;
 		final TinyTree mappings = readMappings(tinyFile);
 		for (ClassDef classDef : mappings.getClasses()) {
-			final String className = remapper.map(classDef.getName(namespace));
+			final String className = classDef.getName(namespace);
 
 			classes.put(className, classDef);
 
 			for (FieldDef fieldDef : classDef.getFields()) {
-				fields.put(new EntryTriple(className, fieldDef.getName(namespace), remapper.mapDesc(fieldDef.getDescriptor(namespace))), fieldDef);
+				fields.put(new EntryTriple(className, fieldDef.getName(namespace), fieldDef.getDescriptor(namespace)), fieldDef);
 			}
 
 			for (MethodDef methodDef : classDef.getMethods()) {
-				methods.put(new EntryTriple(className, methodDef.getName(namespace), remapper.mapMethodDesc(methodDef.getDescriptor(namespace))), methodDef);
+				methods.put(new EntryTriple(className, methodDef.getName(namespace), methodDef.getDescriptor(namespace)), methodDef);
 			}
 		}
 	}
+
+	public RemappingMappingsStore(Path tinyFile, Map<String, String> manifest) {
+		this(tinyFile, new ManifestRemapper(manifest));
+	}
+
+
 	public RemappingMappingsStore(Path tinyFile, Path manifest) {
 		this(tinyFile, new ManifestRemapper(manifest));
 	}
 
 	@Override
 	public String getClassDoc(String className) {
-		ClassDef classDef = classes.get(className);
+		ClassDef classDef = classes.get(remapper.map(className));
 		return classDef != null ? classDef.getComment() : null;
 	}
 
 	@Override
 	public String getFieldDoc(EntryTriple fieldEntry) {
-		FieldDef fieldDef = fields.get(fieldEntry);
+		FieldDef fieldDef = fields.get(new EntryTriple(remapper.map(fieldEntry.getOwner()), fieldEntry.getName(), remapper.mapDesc(fieldEntry.getDesc())));
 		return fieldDef != null ? fieldDef.getComment() : null;
 	}
 
@@ -102,7 +115,7 @@ public class RemappingMappingsStore implements MappingsStore {
 
 		return null;
 	}
-	
+
 	private MethodDef searchMethod(Function<String, Collection<String>> superGetters, EntryTriple methodEntry) {
 		String className = methodEntry.getOwner();
 		if (!classes.containsKey(className)) {
@@ -110,9 +123,9 @@ public class RemappingMappingsStore implements MappingsStore {
 		}
 
 		if (methods.containsKey(methodEntry)) {
-			return methods.get(methodEntry); // Nullable!
+			return methods.get(new EntryTriple(remapper.map(methodEntry.getOwner()), methodEntry.getName(), remapper.mapMethodDesc(methodEntry.getDesc()))); // Nullable!
 		}
-		
+
 		for (String superName : superGetters.apply(className)) {
 			EntryTriple triple = new EntryTriple(superName, methodEntry.getName(), methodEntry.getDesc());
 			MethodDef ret = searchMethod(superGetters, triple);

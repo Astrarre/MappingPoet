@@ -81,8 +81,15 @@ public class Main {
 		generate(mappings, inputJar, outputDirectory, manifest);
 	}
 
-	public static void generate(Path mappings, Path inputJar, Path outputDirectory, Path manifest) {
-		final RemappingMappingsStore mapping = new RemappingMappingsStore(mappings, manifest);
+	public static void generate(Path mappings, Path inputJar, Path outputDir, Path manifest) {
+		generate(inputJar, outputDir, new RemappingMappingsStore(mappings, manifest));
+	}
+
+	public static void generate(Path mappings, Path inputJar, Path outputDir, Map<String, String> manifest) {
+		generate(inputJar, outputDir, new RemappingMappingsStore(mappings, manifest));
+	}
+
+	public static void generate(Path inputJar, Path outputDirectory, RemappingMappingsStore mapping) {
 		Map<String, ClassBuilder> classes = new HashMap<>();
 		forEachClass(inputJar, (superGetter, classNode) -> writeClass(mapping, classNode, classes, superGetter));
 
