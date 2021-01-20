@@ -46,14 +46,9 @@ public class RemappingMappingsStore implements MappingsStore {
 	private final Remapper remapper;
 	private final String namespace = "named";
 
-	/**
-	 * (map from abstracter output -> minecraft)
-	 * @param remapper source -> mapping
-	 */
-	public RemappingMappingsStore(Path tinyFile, Remapper remapper) {
+	public RemappingMappingsStore(TinyTree tree, Remapper remapper) {
 		this.remapper = remapper;
-		final TinyTree mappings = readMappings(tinyFile);
-		for (ClassDef classDef : mappings.getClasses()) {
+		for (ClassDef classDef : tree.getClasses()) {
 			final String className = classDef.getName(namespace);
 
 			classes.put(className, classDef);
@@ -66,6 +61,14 @@ public class RemappingMappingsStore implements MappingsStore {
 				methods.put(new EntryTriple(className, methodDef.getName(namespace), methodDef.getDescriptor(namespace)), methodDef);
 			}
 		}
+	}
+
+	/**
+	 * (map from abstracter output -> minecraft)
+	 * @param remapper source -> mapping
+	 */
+	public RemappingMappingsStore(Path tinyFile, Remapper remapper) {
+		this(readMappings(tinyFile), remapper);
 	}
 
 	public RemappingMappingsStore(Path tinyFile, Map<String, String> manifest) {
